@@ -44,9 +44,7 @@ export class PasswordStore extends StorageProvider<PasswordStoreData> {
   constructor(prefix: string, data: Partial<PasswordStoreData> = initialData) {
     super(prefix, data)
     // on every instantiation of this store, check to see if logged in
-    this.hasPassword().then((result) => {
-      this.isLoggedIn.next(result ? TRUE : FALSE)
-    })
+    this.hasPassword().then((result) => this.isLoggedIn.next(result ? TRUE : FALSE))
 
     chrome.alarms.onAlarm.addListener((alarm) => {
       if (alarm.name !== ALARM_NAME) return
@@ -60,13 +58,10 @@ export class PasswordStore extends StorageProvider<PasswordStoreData> {
 
     // don't set alarm if user is not logged in
     if (this.isLoggedIn.value !== TRUE) return
+    // don't set alarm if minutes is less than or equal to 0
+    if (!minutes || minutes <= 0) return
 
-    if (minutes > 0) {
-      await chrome.alarms.create(ALARM_NAME, {
-        delayInMinutes: minutes,
-        periodInMinutes: minutes,
-      })
-    }
+    await chrome.alarms.create(ALARM_NAME, { delayInMinutes: minutes, periodInMinutes: minutes })
   }
 
   async reset() {
@@ -85,6 +80,7 @@ export class PasswordStore extends StorageProvider<PasswordStoreData> {
     const check = await encrypt(password, { secret })
     const result = (await decrypt(password, check)) as { secret: string }
     assert(result.secret && result.secret === secret, "Unable to set password")
+
     return { secret, check }
   }
 
@@ -104,6 +100,7 @@ export class PasswordStore extends StorageProvider<PasswordStoreData> {
     const salt = await generateSalt()
     const pwResult = await getHashedPassword(plaintextPw, salt)
     if (!pwResult.ok) pwResult.unwrap()
+
     // create stored secret and check value
     const { secret, check } = await this.createAuthSecret(pwResult.val)
 
@@ -112,24 +109,31 @@ export class PasswordStore extends StorageProvider<PasswordStoreData> {
 
   async authenticate(password: string) {
     if (this.isLoggedIn.value === TRUE) return
+
     const pw = await this.transformPassword(password)
     const { secret, check } = await this.get()
     assert(secret && check, "Unable to authenticate")
+
     const result = (await decrypt(pw, check)) as { secret: string }
     assert(result.secret && result.secret === secret, "Incorrect Password")
+
     this.setPassword(pw)
   }
 
   setPassword(password: string | undefined) {
-    sessionStorage.set({ password })
+    if (typeof password === "string") sessionStorage.set({ password })
+    else sessionStorage.remove("password")
+
     this.isLoggedIn.next(password !== undefined ? TRUE : FALSE)
   }
 
   public async getHashedPassword(plaintextPw: string) {
     const salt = await this.get("salt")
     assert(salt, "Password salt has not been generated yet")
+
     const { err, val } = await getHashedPassword(plaintextPw, salt)
     if (err) throw new Error(val)
+
     return val
   }
 
@@ -178,7 +182,7 @@ export class PasswordStore extends StorageProvider<PasswordStoreData> {
   }
 
   async hasPassword() {
-    return !!(await sessionStorage.get("password"))
+    return Boolean(await sessionStorage.get("password"))
   }
 }
 
