@@ -6,4 +6,5 @@ COPY . ./
 
 RUN pnpm clean
 RUN pnpm install
-ENV USE_ONE_DIST_DIR=true
+# NOTE: Only needed while we wait for https://github.com/polkadot-api/polkadot-api/pull/851 to be released
+RUN pnpm papi:dockerbuildcompat
