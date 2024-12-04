@@ -1,5 +1,6 @@
 import { Enum } from "@polkadot-api/substrate-bindings"
 import { range } from "lodash"
+import { Binary } from "polkadot-api"
 
 import {
   EVM_LSD_SUPPORTED_CHAINS,
@@ -113,10 +114,39 @@ export const getStakingAPR = async (sapi: ScaleApi) => {
   return apr
 }
 
+export const getBittensorStakingPayload = async ({
+  sapi,
+  address,
+  poolId,
+  amount,
+}: {
+  sapi: ScaleApi
+  address: string
+  poolId: string | number
+  amount: bigint
+}) => {
+  return sapi.getExtrinsicPayload(
+    "Utility",
+    "batch_all",
+    {
+      calls: [
+        sapi.getDecodedCall("SubtensorModule", "add_stake", {
+          hotkey: poolId,
+          amount_staked: amount,
+        }),
+        sapi.getDecodedCall("System", "remark_with_event", {
+          remark: Binary.fromText("talisman-bittensor"),
+        }),
+      ],
+    },
+    { address },
+  )
+}
+
 export const getNomPoolStakingPayload = async (
   sapi: ScaleApi,
   address: string,
-  poolId: number,
+  poolId: number | string,
   amount: bigint,
   isBondExtra: boolean,
   withSetClaimPermission: boolean,
