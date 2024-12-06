@@ -8,6 +8,6 @@ export const useDetaultNomPoolId = (chainId?: ChainId | null | undefined) => {
 
   return useMemo(() => {
     if (!chainId) return null
-    return remoteConfig.stakingPools?.[chainId]?.[0] ?? null
-  }, [chainId, remoteConfig.stakingPools])
+    return remoteConfig.nominationPools?.[chainId]?.[0] ?? null
+  }, [chainId, remoteConfig.nominationPools])
 }
