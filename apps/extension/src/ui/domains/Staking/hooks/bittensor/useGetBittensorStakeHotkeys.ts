@@ -16,7 +16,8 @@ export const useGetBittensorStakeHotkeys = ({
   address,
   totalStaked,
 }: GetBittensorStakeHotkeys) => {
-  const { data: sapi } = useScaleApi(chainId)
+  // this calls useScaleApi which downloads metadata from chain, we only want this to be done for bittensor
+  const { data: sapi } = useScaleApi(chainId === "bittensor" ? "bittensor" : null)
 
   return useQuery({
     queryKey: ["getBittensorStakeHotkeys", sapi?.id, address, totalStaked],

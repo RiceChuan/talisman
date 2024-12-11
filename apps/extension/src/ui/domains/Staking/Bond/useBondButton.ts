@@ -38,10 +38,7 @@ export const useBondButton = ({
 
   const address = sorted[0]?.address
 
-  const { data: hotkeys } = useGetBittensorStakeHotkeys({
-    chainId: token?.chain?.id,
-    address,
-  })
+  const { data: hotkeys } = useGetBittensorStakeHotkeys({ chainId: token?.chain?.id, address })
 
   const [openArgs, isNomPoolStaking] = useMemo<[Parameters<typeof open>[0] | null, boolean]>(() => {
     if (!balances || !tokenId || !token?.chain || token?.type !== "substrate-native")
